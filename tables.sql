@@ -6,7 +6,7 @@ create table users(
      password varchar(60) NOT NULL, --bcrypt 60 chars long
      cartid UUID,
      paymentsid  UUID,
-     admin boolean NOT NULL,
+     admin boolean,
     FOREIGN KEY(cartid) REFERENCES cart(cartid),
     FOREIGN KEY(paymentsid) REFERENCES payments(paymentid) 
 );
