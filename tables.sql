@@ -1,5 +1,5 @@
 create table users(
-     userid UUID PRIMARY KEY,
+     userid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
      firstname varchar(100) NOT  null,
      lastname varchar(100) NOT  null,
      email varchar(255) NOT NULL UNIQUE,
@@ -12,7 +12,7 @@ create table users(
 );
 
 create table cart(
-    cartid UUID PRIMARY KEY NOT NULL,
+    cartid UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
     productid UUID NOT NULL UNIQUE,
     quantity INT,
     totalprice DECIMAL,
@@ -20,7 +20,7 @@ create table cart(
 );
  
 create table products(
-    productid UUID PRIMARY KEY,
+    productid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     productname TEXT NOT NULL,
     categoryid  UUID NOT NULL,
     quantity INT NOT NULL,
@@ -32,12 +32,12 @@ create table products(
 
 
 create table category(
-    categoryid UUID PRIMARY KEY NOT NULL,
+    categoryid UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
     categoryname VARCHAR(100) NOT NULL UNIQUE
 );
 
 create table payments(
-    paymentid UUID PRIMARY KEY,
+    paymentid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     paymentmethod VARCHAR(25),
     paymentDate DATE,
     totalPurchase DECIMAL,
@@ -46,7 +46,7 @@ create table payments(
 );
 
 create table purchases(
-    purchaseid UUID PRIMARY KEY,
+    purchaseid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     productid UUID,
     quantity INT,
     purchaseDate DATE,

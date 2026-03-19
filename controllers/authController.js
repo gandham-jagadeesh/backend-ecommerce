@@ -1,25 +1,54 @@
 const db = require("../db/db");
 const pq = require("pg-promise").ParameterizedQuery;
+const {valid,hash} = require("../utilites/hash");
+const {encode} = require("../utilites/jwt");
 
-const signin = (req,res)=>{
-
-}
+const signin = async (req,res)=>{
+    try{
+    const {email,password} = req.body;
+    const user = await db.oneOrNone("select * from users where email = $1",[email]);
+    const isValid = await valid(password,user ? user.password : "$2b$10$abcdefghijklmnopqrstuv1234567890123456789012");
+    if (!user || !isValid) {
+      return res.status(401).json({
+        err: "Invalid credentials"
+      });
+    }
+    const token =  encode({id:user.userid});
+    return res.status(200).json({
+        token
+    });
+    }
+    catch(err){
+        console.log(err);
+        res.status(500).json({
+            err:"server error"
+        })
+    }
+};
 
 const signup = async (req,res)=>{
+    try{
     const {firstname,lastname,email,password} = req.body;
-    const uuid = "3f8a9c6e-2b1d-4e7a-9c5d-6f2b8a1e4c90"
-    const dbres = await db.any("select * from users where email = $1",[email]);
-    if(dbres.length > 0){
-        res.status(409).json({"err":"email already exists"});
-        return;
+    const dbres = await db.oneOrNone("select userid  from users where email = $1",[email]);
+    if(dbres){
+        return res.status(409).json({"err":"email already exists"});
     }
-    const query = new pq("insert into users(userid,firstname,lastname,email,password) values($1,$2,$3,$4,$5) returning firstname,lastname,email,password");
-    query.values = [uuid,firstname, lastname, email, password];
+    const hashedPassword = await hash(password);
+    const query = new pq("insert into users(firstname,lastname,email,password) values($1,$2,$3,$4) returning firstname,lastname,email");
+    query.values = [firstname, lastname, email, hashedPassword];
     const newuser = await db.one(query);
     return res.status(201).json({
         status: "success",
         data: newuser
     });
+
+    }
+    catch(err){
+        console.log(err);
+         res.status(500).json({
+            err:"server error"
+        });
+    }
 }
 
 module.exports = {
