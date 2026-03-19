@@ -7,8 +7,8 @@ const encode = (payload)=>{
 };
 
 const verify = (token)=>{
-    const {userid} = jwt.verify(token,secret);
-    return userid;
+    const {id} = jwt.verify(token,secret);
+    return id;
 }
 module.exports = {
     encode,
