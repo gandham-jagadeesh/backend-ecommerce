@@ -4,7 +4,7 @@ const pg = require("pg-promise")({
         console.log("connected to db: ",cp.database);
     },
     disconnect(e){
-       console.log("disconnected: ",e);
+       console.log("disconnected: ",e); //do some clean up send some network request
     },
 
     error(e){
@@ -23,4 +23,4 @@ const options = {
 }
 
 const db = pg(options);
-module.exports = db;
+module.exports = {db,pg};

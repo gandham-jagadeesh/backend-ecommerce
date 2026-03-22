@@ -1,38 +1,67 @@
-const db = require("../db/db");
+const {db,pg} = require("../db/db");
+const {update} = pg.helpers;
 
 const addproduct = async (req,res)=>{
+    try{
     const product = req.body.product;
     const {productname,categoryid,quantity,description,price,pic} = product;
-    const insertedProduct = await db.one("insert into products(productname,categoryid,quantity,description,price,pic) values($1,$2,$3,$4,$5,$6) returning  productid productname,categoryid,quantity,description,price,pic",[productname,categoryid,quantity,description,price,pic]);
-    return insertedProduct;
+    const insertedProduct = await db.one("insert into products(productname,categoryid,quantity,description,price,pic) values($1,$2,$3,$4,$5,$6) returning productname,categoryid,quantity,description,price,pic",[productname,categoryid,quantity,description,price,pic]);
+    res.status(201).json({data:insertedProduct});
+    }   
+    catch(e){
+        console.log(e);
+    }
 }
 
 const addcategory = async (req,res)=>{
    const category = req.body.category; 
-    const insertedCategory = await db.one("insert into category(categoryname) values($1) returning categoryname",[category]);
-    console.log(insertedCategory);
+   const insertedCategory = await db.one("insert into category(categoryname) values($1) returning categoryid,categoryname",[category]);
     res.status(201).json({
         data:insertedCategory
+    });
+}
+
+const removeProduct = async (req, res)=>{
+    const productId = req.params.productid;
+    const removedproduct = await db.any("delete from products where productid = $1 ",[productId]);
+    res.status(200).json({
+        msg:"product deleted sucessfully",
+        data:removedproduct
     })
 }
-const removeProduct = (productid)=>{
-
+const modifyProduct = async (req,res)=>{
+    const productId = req.params.productid;
+    const productcols   = req.body.product;
+    const updateQuery = update(productcols,null,"products");
+    const whereClause =  " where productid = $1"
+    const query = updateQuery + whereClause;
+     await db.none(query,[productId]);
+    res.status(200).json({
+        msg:"modified product sucessfully",
+     }); 
 }
 
-const modifyProduct = (productid,product)=>{
-
+const getproduct = async (req,res)=>{
+    const productId = req.params.productid;
+    const product  = await  db.one("select * from products where productid = $1",productId);
+    res.status(200).json({
+        data:product
+    });
 }
 
-const getproduct = ()=>{
 
-}
-
-
-const allproducts = ()=>{
-
+const allproducts = async (req,res)=>{
+    const products = await db.manyOrNone("select * from products");
+    res.status(200).json({
+        data:products
+    });
 }
 
 module.exports = {
     addproduct,
-    addcategory
+    addcategory,
+    removeProduct,
+    modifyProduct,
+    getproduct,
+    allproducts
 }

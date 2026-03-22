@@ -1,4 +1,4 @@
-const db = require("../db/db");
+const db = require("../db/db").db;
 const pq = require("pg-promise").ParameterizedQuery;
 const {valid,hash} = require("../utilites/hash");
 const {encode} = require("../utilites/jwt");

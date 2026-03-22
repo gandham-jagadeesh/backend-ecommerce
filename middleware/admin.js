@@ -1,5 +1,5 @@
 const {verify} = require("../utilites/jwt");
-const db = require("../db/db");
+const db = require("../db/db").db;
 module.exports = async (req,res,next)=>{
     const token = req.body.token;
     const id = await verify(token,"i am in idiot");
