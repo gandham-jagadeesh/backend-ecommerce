@@ -26,7 +26,7 @@ create table products(
     quantity INT NOT NULL,
     description TEXT NOT NULL,
     price DECIMAL NOT NULL,
-    pic TEXT NOT NULL,
+    pic TEXT NULL,
     FOREIGN KEY(categoryid) REFERENCES category(categoryid)
 );
 

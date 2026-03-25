@@ -1,15 +1,25 @@
 const {db,pg} = require("../db/db");
 const {update} = pg.helpers;
 
+// input validation 
 const addproduct = async (req,res)=>{
     try{
     const product = req.body.product;
     const {productname,categoryid,quantity,description,price,pic} = product;
     const insertedProduct = await db.one("insert into products(productname,categoryid,quantity,description,price,pic) values($1,$2,$3,$4,$5,$6) returning productname,categoryid,quantity,description,price,pic",[productname,categoryid,quantity,description,price,pic]);
-    res.status(201).json({data:insertedProduct});
+    return res.status(201).json({ status:"success",data:insertedProduct});
     }   
     catch(e){
-        console.log(e);
+        if(e.code == "23503"){
+            return res.status(400).json({
+                status:"error",
+                message:"Invalid category"
+            });
+        }
+       return res.status(500).json({
+        status:"error",
+        message:"Internal Server error"
+       })
     }
 }
 
@@ -23,7 +33,7 @@ const addcategory = async (req,res)=>{
 
 const removeProduct = async (req, res)=>{
     const productId = req.params.productid;
-    const removedproduct = await db.any("delete from products where productid = $1 ",[productId]);
+    const removedproduct = await db.oneOrNone("delete from products where productid = $1 ",[productId]);
     res.status(200).json({
         msg:"product deleted sucessfully",
         data:removedproduct
@@ -33,9 +43,9 @@ const modifyProduct = async (req,res)=>{
     const productId = req.params.productid;
     const productcols   = req.body.product;
     const updateQuery = update(productcols,null,"products");
-    const whereClause =  " where productid = $1"
+    const whereClause =  " where productid = $1 returning *"
     const query = updateQuery + whereClause;
-     await db.none(query,[productId]);
+     await db.oneOrNone(query,[productId]);
     res.status(200).json({
         msg:"modified product sucessfully",
      }); 
@@ -43,7 +53,7 @@ const modifyProduct = async (req,res)=>{
 
 const getproduct = async (req,res)=>{
     const productId = req.params.productid;
-    const product  = await  db.one("select * from products where productid = $1",productId);
+    const product  = await  db.oneOrNone("select * from products where productid = $1",productId);
     res.status(200).json({
         data:product
     });
