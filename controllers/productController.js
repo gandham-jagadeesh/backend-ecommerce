@@ -1,77 +1,77 @@
 const {db,pg} = require("../db/db");
-const {update} = pg.helpers;
+const productService = require("../services/productService");
+const customError = require("../utilites/appError");
 
-// input validation 
-const addproduct = async (req,res)=>{
-    try{
-    const product = req.body.product;
-    const {productname,categoryid,quantity,description,price,pic} = product;
-    const insertedProduct = await db.one("insert into products(productname,categoryid,quantity,description,price,pic) values($1,$2,$3,$4,$5,$6) returning productname,categoryid,quantity,description,price,pic",[productname,categoryid,quantity,description,price,pic]);
-    return res.status(201).json({ status:"success",data:insertedProduct});
-    }   
-    catch(e){
-        if(e.code == "23503"){
-            return res.status(400).json({
-                status:"error",
-                message:"Invalid category"
-            });
-        }
-       return res.status(500).json({
-        status:"error",
-        message:"Internal Server error"
-       })
+const addProduct = async (req,res)=>{
+    const product = req.body;
+    if(!product){
+        throw new customError(400,"Missing fields");
     }
-}
-
-const addcategory = async (req,res)=>{
-   const category = req.body.category; 
-   const insertedCategory = await db.one("insert into category(categoryname) values($1) returning categoryid,categoryname",[category]);
+    const data = await productService.addProduct(product);
     res.status(201).json({
-        data:insertedCategory
+        status:"success",
+        data:data
     });
 }
 
-const removeProduct = async (req, res)=>{
-    const productId = req.params.productid;
-    const removedproduct = await db.oneOrNone("delete from products where productid = $1 ",[productId]);
-    res.status(200).json({
-        msg:"product deleted sucessfully",
-        data:removedproduct
-    })
-}
-const modifyProduct = async (req,res)=>{
-    const productId = req.params.productid;
-    const productcols   = req.body.product;
-    const updateQuery = update(productcols,null,"products");
-    const whereClause =  " where productid = $1 returning *"
-    const query = updateQuery + whereClause;
-     await db.oneOrNone(query,[productId]);
-    res.status(200).json({
-        msg:"modified product sucessfully",
-     }); 
+const updateProduct = async (req,res)=>{
+  const product_id = req.params.product_id;
+  const product  =  req.body;
+  if(!productId || !product){
+    throw new customError(400,"Missing fields");
+  }
+  const data = await productService.updateProduct(product_id,product);
+  res.status(201).json({
+    status:"success",
+    data:data
+  })
 }
 
+
+const deletedProduct = async (req, res)=>{
+    const product_id = req.params.product_id;
+    if(!product_id){
+        throw new customError(400,"missing product_id field");
+    }
+    const data = await productService.deleteProduct(product_id);
+    return res.status(200).json({
+        status:"success",
+        data: data
+    })
+}
+
+
 const getproduct = async (req,res)=>{
-    const productId = req.params.productid;
-    const product  = await  db.oneOrNone("select * from products where productid = $1",productId);
-    res.status(200).json({
+    const product_id = req.params.product_id;
+      if(!product_id){
+        throw new customError(400,"missing product_id field");
+    }
+    const product  = await productService.getProduct(product_id);
+    return res.status(200).json({
+        status:"success",
         data:product
     });
 }
 
 
-const allproducts = async (req,res)=>{
-    const products = await db.manyOrNone("select * from products");
-    res.status(200).json({
-        data:products
-    });
+const getAllProducts = async (req,res)=>{
+    try{
+        const allproducts = await productService.getAllProducts();
+        return res.status(200).json({
+            status:"success",
+            data:allproducts
+        });
+    }
+    catch(e){
+        throw e;
+    }
 }
 
+
 module.exports = {
-    addproduct,
-    addcategory,
-    removeProduct,
-    modifyProduct,
+    addProduct,
+    updateProduct,
+    deletedProduct,
     getproduct,
-    allproducts
+    getAllProducts
 }

@@ -1,14 +1,14 @@
 const productRoute = require("express").Router();
 const productController = require("../controllers/productController");
-const admin = require("../middleware/admin");
+const admin  = require("../middleware/adminMiddleware");
+const auth = require("../middleware/authMiddleware");
 
-productRoute.use(admin);
+productRoute.use(auth,admin);
 
-productRoute.post("/products/add",productController.addproduct);
-productRoute.get("/products",productController.allproducts);
-productRoute.get("/products/:productid",productController.getproduct);
-productRoute.patch("/products/:productid",productController.modifyProduct);
-productRoute.delete("/products/:productid",productController.removeProduct);
-productRoute.post("/products/category",productController.addcategory);
+productRoute.post("/",productController.addProduct);
+productRoute.patch("/:product_id",productController.updateProduct);
+productRoute.delete("/:product_id",productController.deletedProduct);
+productRoute.get("/:product_id",productController.getproduct);
+productRoute.get("/",productController.getAllProducts);
 
 module.exports = productRoute;

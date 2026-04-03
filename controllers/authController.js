@@ -1,54 +1,21 @@
-const db = require("../db/db").db;
-const pq = require("pg-promise").ParameterizedQuery;
-const {valid,hash} = require("../utilites/hash");
-const {encode} = require("../utilites/jwt");
+const authService = require("../services/authService");
 
-const signin = async (req,res)=>{
-    try{
-    const {email,password} = req.body;
-    const user = await db.oneOrNone("select * from users where email = $1",[email]);
-    const isValid = await valid(password,user ? user.password : "$2b$10$abcdefghijklmnopqrstuv1234567890123456789012");
-    if (!user || !isValid) {
-      return res.status(401).json({
-        err: "Invalid credentials"
-      });
-    }
-    const token =  encode({id:user.userid});
+const signin = async (req,res,)=>{
+    const user  = req.body;
+    const data = await authService.signin(user);
     return res.status(200).json({
-        token
-    });
-    }
-    catch(err){
-        console.log(err);
-        res.status(500).json({
-            err:"server error"
-        })
-    }
+        status:"success",
+        data:data
+    })
 };
 
 const signup = async (req,res)=>{
-    try{
-    const {firstname,lastname,email,password} = req.body;
-    const dbres = await db.oneOrNone("select userid  from users where email = $1",[email]);
-    if(dbres){
-        return res.status(409).json({"err":"email already exists"});
-    }
-    const hashedPassword = await hash(password);
-    const query = new pq("insert into users(firstname,lastname,email,password) values($1,$2,$3,$4) returning firstname,lastname,email");
-    query.values = [firstname, lastname, email, hashedPassword];
-    const newuser = await db.one(query);
+    const user = req.body;
+    const data = await authService.signup(user);   
     return res.status(201).json({
         status: "success",
-        data: newuser
+        data: data
     });
-
-    }
-    catch(err){
-        console.log(err);
-         res.status(500).json({
-            err:"server error"
-        });
-    }
 }
 
 module.exports = {
