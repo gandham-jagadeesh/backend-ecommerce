@@ -9,7 +9,7 @@ const getCartItems = (req,res)=>{
 
 }
 
-
+//not good quanity limit should be in business logic not here uuid regex check 
 const addCartItem = async (req,res)=>{
     const cartItem = req.body;
     const user_id  = req.user.id;
@@ -27,7 +27,7 @@ const addCartItem = async (req,res)=>{
     if(!Number.isInteger(parsedQuantity) || parsedQuantity <= 0){
         throw new customError(400,"invalid quantity");
     }
-    const data = await cartItemService.addItem(product_id,quantity,user_id);
+    const data = await cartItemService.addItem(product_id,parsedQuantity,user_id);
     return res.status(201).json({
         status:"success",
         data:data
