@@ -7,4 +7,4 @@ router.use(auth);
 router.get("/:product_id",publicProductController.getProduct);
 router.get("/",publicProductController.getAllProducts);
 
-module.exports = publicProductRouter;
+module.exports = router;

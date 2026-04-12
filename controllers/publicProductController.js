@@ -1,3 +1,4 @@
+const productService = require("../services/productService");
 
 const getProduct = async (req,res)=>{
     const product_id = req.params.product_id;

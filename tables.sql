@@ -15,7 +15,7 @@ create table categories(
         created_at  TIMESTAMP DEFAULT NOW() NOT NULL, 
         modified_at TIMESTAMP,
         unique(product_name,category_id),
-        FOREIGN KEY(category_id) REFERENCES categories(category_id) on Delete null
+        FOREIGN KEY(category_id) REFERENCES categories(category_id) on delete set null
     );
 
 create table users(

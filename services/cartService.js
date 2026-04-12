@@ -2,35 +2,77 @@ const customError = require("../utilites/appError");
 
 const db = require("../db/db").db;
 
-// i can only check product_id and quantity,user_id are uuid or not
+
 const addItem = async (product_id,quantity,user_id)=>{
+     if(quantity > 1_000_000){
+            throw new customError(400,"invalid quantity");
+    }
     try{
-        // syntax issues , user_id does not exists (handle in try catch block ), user_id exists already as its unique :
-        // user_id : can check with select query or can check in catch error by status code return such that user not exists may be deleted but are we allowing that ?? how to stop from deleting the user when cart is using it up
-        // user_id alreadu exists : select query + insert -> better -> insert + onconflict update the userid
-        //what if user_id is wrong at max it wil be perfect because  we are taking that from jwt may be if user_id is deleted that can be the cause right are we allowing that yep if user is delete there is not cart 
-        const cart = await db.one(
+        const cart_item = await db.tx(async (t)=>{
+             const cart = await t.one(
             "insert into carts(user_id) values($1) on conflict(user_id) do update set user_id = excluded.user_id returning *",
             [user_id]);
-        // cart_item already existss : update the quantiy may be user clicked add to cart twice may be
-        // cart_item does not already exists insert
-        // what if product_id or cart_id is wrong thats a case to consider right thats throws conflic are these two different conflits liek onconflict() monly for already for exisiting ones or like what 
-        if(quantity > 1_000_000){
-            throw new customError(400,"invalid quantity");
-        }
-        const cart_item = await db.one(
-            "insert into cartitems(cart_id,product_id,quantity) values($1,$2,$3) on conflict(cart_id,product_id) do update quantity = cartitems.quantity + excluded.quantity  returning *",
+
+        const cart_item = await t.one(
+            "insert into cartitems(cart_id,product_id,quantity) values($1,$2,$3) on conflict(cart_id,product_id) do update set quantity = cartitems.quantity + excluded.quantity  returning *",
         [cart.cart_id,product_id,quantity]);
+        return cart_item;  
+        });
         return cart_item;
     }
     catch(e){
         if(e.code == "23503"){
             throw new customError(400,"invalid user or product");
         }
+        if(e.code == "22P02"){
+            throw new customError(400,"invalid data format");
+        }
         throw e;
     }
 }
 
+
+const updateItem = async (cart_item_id,quant,user_id)=>{
+ const deleteQuery  = "delete from cartitems ci  using  carts c where c.cart_id = ci.cart_id  and ci.cart_item_id = $1  and ci.quantity + $2  <= 0 and c.user_id = $3 returning ci.*";
+ const updateQuery  = "update cartitems ci set quantity = quantity + $1 from carts c where c.cart_id = ci.cart_id  and c.user_id=$3 and ci.cart_item_id=$2 returning ci.*";
+ const deletedCartItem = await db.oneOrNone(deleteQuery,[cart_item_id,quant,user_id]);
+ if(deletedCartItem){
+    return deletedCartItem
+ }
+ const updatedCartItem = await db.oneOrNone(updateQuery,[quant,cart_item_id,user_id]);
+ if(!updatedCartItem){
+    throw new customError(404,"not found");
+ }
+  return updatedCartItem;
+}
+
+const deletItem = async (cart_item_id,user_id)=>{
+    const deleteQuery = "delete from cartitems ci using carts c   where ci.cart_id = c.cart_id and ci.cart_item_id = $1 and c.user_id = $2  returning *";
+    const deletedQuery = await db.oneOrNone(deleteQuery,[cart_item_id,user_id]);
+    if(!deletedQuery){
+        throw new customError(404,"cart_item not found");
+    }
+    return deletedQuery;
+}
+
+
+const getAllItems = async (user_id)=>{
+        const items = await db.manyOrNone("select ci.* from cartitems ci  join carts c on  ci.cart_id = c.cart_id where  c.user_id = $1",[user_id]);
+        return items;
+}
+
+const getItem = async (cart_item_id,user_id)=>{
+        const item  = await db.oneOrNone("select ci.* from cartitems ci  join  carts c on  ci.cart_id = c.cart_id where c.user_id = $1 and  ci.cart_item_id= $2",[user_id,cart_item_id]);
+        if(!item){
+            throw new customError(404,"no products");
+        }
+        return item;
+}
+
 module.exports = {
- addItem
+ addItem,
+ updateItem,
+ deletItem,
+ getAllItems,
+ getItem
 }
